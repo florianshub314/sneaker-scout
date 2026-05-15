@@ -1,3 +1,9 @@
+# Internal planning files (must never be committed)
+requirements.md
+plan.md
+style.md
+workflow.md
+
 # API Keys & Secrets
 .env
 *.env
