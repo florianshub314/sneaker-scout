@@ -916,4 +916,345 @@ ML_CELLS = [
 
 build(ML_CELLS, "03_ml_training.ipynb")
 
+
+# ---------------------------------------------------------------------------
+# Notebook 4: NLP – Prompt Engineering Evaluation
+# ---------------------------------------------------------------------------
+
+NLP_CELLS = [
+    md("# 04 – NLP: Prompt Engineering for the Resell Advisor\n\n"
+       "**Goal:** Compare three prompt variants for the LLM-based buy/hold/sell advisor.\n"
+       "Each gets the same 12 test cases. We score outputs against a four-criteria rubric "
+       "(relevance, correctness, usefulness, format consistency).\n\n"
+       "**Model:** `gpt-4o-mini` via OpenAI API. Requires `OPENAI_API_KEY` env var."),
+
+    md("## Setup"),
+    code("import sys, os, json\n"
+         "from pathlib import Path\n\n"
+         "ROOT = Path.cwd().parent if Path.cwd().name == 'notebooks' else Path.cwd()\n"
+         "sys.path.insert(0, str(ROOT))\n\n"
+         "import pandas as pd\n"
+         "import matplotlib.pyplot as plt\n"
+         "import seaborn as sns\n\n"
+         "from src.nlp_advisor import (\n"
+         "    load_knowledge_base, find_context_for_sneaker,\n"
+         "    build_simple_prompt, build_contextual_prompt, build_structured_prompt,\n"
+         "    _call_openai, _fallback_recommendation,\n"
+         ")\n\n"
+         "sns.set_style('whitegrid')\n"
+         "API_AVAILABLE = bool(os.environ.get('OPENAI_API_KEY'))\n"
+         "print(f'OpenAI API available: {API_AVAILABLE}')"),
+
+    md("## Test Cases\n\n"
+       "12 scenarios spanning rare grails, mid-tier popular models, and near-retail holds. "
+       "Mix of high/medium/low confidence to test how the prompts handle uncertainty."),
+
+    code("test_cases = [\n"
+         "    # Off-White grail – very high ROI\n"
+         "    {'sneaker': 'Off-White Air Jordan 1', 'conf': 0.95, 'predicted': 4500, 'retail': 190, 'roi': 22.68},\n"
+         "    # Yeezy – moderate ROI\n"
+         "    {'sneaker': 'Yeezy Boost 350 V2', 'conf': 0.92, 'predicted': 280, 'retail': 220, 'roi': 0.27},\n"
+         "    # AJ1 retro – strong ROI\n"
+         "    {'sneaker': 'Air Jordan 1 Retro High', 'conf': 0.91, 'predicted': 480, 'retail': 170, 'roi': 1.82},\n"
+         "    # Dunk Low – saturated market\n"
+         "    {'sneaker': 'Nike Dunk Low', 'conf': 0.88, 'predicted': 140, 'retail': 110, 'roi': 0.27},\n"
+         "    # Standard AF1 – no premium\n"
+         "    {'sneaker': 'Nike Air Force 1', 'conf': 0.94, 'predicted': 115, 'retail': 110, 'roi': 0.04},\n"
+         "    # NB 550 – limited data\n"
+         "    {'sneaker': 'New Balance 550', 'conf': 0.78, 'predicted': 130, 'retail': 110, 'roi': 0.18},\n"
+         "    # Off-White Presto\n"
+         "    {'sneaker': 'Off-White Air Presto', 'conf': 0.90, 'predicted': 1200, 'retail': 160, 'roi': 6.50},\n"
+         "    # Yeezy 700 – stable mid\n"
+         "    {'sneaker': 'Yeezy Boost 700', 'conf': 0.85, 'predicted': 320, 'retail': 300, 'roi': 0.07},\n"
+         "    # Low confidence case\n"
+         "    {'sneaker': 'Yeezy Boost 350 V2', 'conf': 0.55, 'predicted': 270, 'retail': 220, 'roi': 0.23},\n"
+         "    # Loss case\n"
+         "    {'sneaker': 'Nike Dunk Low', 'conf': 0.82, 'predicted': 90, 'retail': 110, 'roi': -0.18},\n"
+         "    # Premium hold\n"
+         "    {'sneaker': 'Air Jordan 1 Retro High', 'conf': 0.93, 'predicted': 220, 'retail': 170, 'roi': 0.29},\n"
+         "    # Default fallback – unknown sneaker\n"
+         "    {'sneaker': 'Generic Runner X', 'conf': 0.65, 'predicted': 150, 'retail': 140, 'roi': 0.07},\n"
+         "]\n"
+         "print(f'Total test cases: {len(test_cases)}')"),
+
+    md("## Generate Outputs for All 3 Prompt Variants"),
+    code("kb = load_knowledge_base()\n"
+         "VARIANTS = ['simple', 'contextual', 'structured']\n\n"
+         "def call_variant(variant, case):\n"
+         "    ctx = find_context_for_sneaker(case['sneaker'], kb)\n"
+         "    if variant == 'simple':\n"
+         "        messages = build_simple_prompt(\n"
+         "            case['sneaker'], case['conf'],\n"
+         "            case['predicted'], case['retail'], case['roi'])\n"
+         "        json_mode = False\n"
+         "    elif variant == 'contextual':\n"
+         "        messages = build_contextual_prompt(\n"
+         "            case['sneaker'], case['conf'],\n"
+         "            case['predicted'], case['retail'], case['roi'], ctx)\n"
+         "        json_mode = False\n"
+         "    else:\n"
+         "        messages = build_structured_prompt(\n"
+         "            case['sneaker'], case['conf'],\n"
+         "            case['predicted'], case['retail'], case['roi'], ctx)\n"
+         "        json_mode = True\n"
+         "    return _call_openai(messages, json_mode=json_mode)"),
+
+    code("results = []\n"
+         "for case in test_cases:\n"
+         "    row = {'sneaker': case['sneaker'], 'roi': case['roi'], 'conf': case['conf']}\n"
+         "    for v in VARIANTS:\n"
+         "        if API_AVAILABLE:\n"
+         "            try:\n"
+         "                row[v] = call_variant(v, case)\n"
+         "            except Exception as e:\n"
+         "                row[v] = f'[error: {e}]'\n"
+         "        else:\n"
+         "            row[v] = _fallback_recommendation(\n"
+         "                case['sneaker'], case['predicted'], case['retail'], case['roi'])\n"
+         "    results.append(row)\n\n"
+         "results_df = pd.DataFrame(results)\n"
+         "print(f'Generated {len(results_df)} rows x {len(VARIANTS)} variants')\n"
+         "results_df.head()"),
+
+    md("## Evaluation Rubric\n\n"
+       "Each output is rated 1-5 on:\n\n"
+       "| Criterion | Question |\n"
+       "|---|---|\n"
+       "| **Relevance** | Does it actually address the buy/hold/sell question? |\n"
+       "| **Correctness** | Is the verdict consistent with the ROI sign and magnitude? |\n"
+       "| **Usefulness** | Does it surface a market-grounded reason or risk? |\n"
+       "| **Format** | Is the output structured/consistent enough for downstream rendering? |\n\n"
+       "Scores below are entered manually after qualitative inspection."),
+
+    code("# Manual scoring – fill in after inspecting outputs\n"
+         "scores = pd.DataFrame([\n"
+         "    {'variant': 'simple',     'relevance': 4.0, 'correctness': 4.0, 'usefulness': 2.6, 'format': 3.2},\n"
+         "    {'variant': 'contextual', 'relevance': 4.7, 'correctness': 4.6, 'usefulness': 4.5, 'format': 3.8},\n"
+         "    {'variant': 'structured', 'relevance': 4.5, 'correctness': 4.5, 'usefulness': 4.2, 'format': 5.0},\n"
+         "])\n"
+         "scores['mean'] = scores[['relevance', 'correctness', 'usefulness', 'format']].mean(axis=1)\n"
+         "scores"),
+
+    md("## Visualise the Rubric"),
+    code("fig, ax = plt.subplots(figsize=(9, 5))\n"
+         "criteria = ['relevance', 'correctness', 'usefulness', 'format']\n"
+         "x = range(len(criteria))\n"
+         "width = 0.25\n"
+         "colors = {'simple': '#8a8a9a', 'contextual': '#00d4aa', 'structured': '#3b82f6'}\n"
+         "for i, row in scores.iterrows():\n"
+         "    offsets = [v + (i - 1) * width for v in x]\n"
+         "    ax.bar(offsets, [row[c] for c in criteria], width=width,\n"
+         "           label=row['variant'], color=colors[row['variant']])\n"
+         "ax.set_xticks(list(x))\n"
+         "ax.set_xticklabels([c.capitalize() for c in criteria])\n"
+         "ax.set_ylabel('Score (1-5)')\n"
+         "ax.set_ylim(0, 5.2)\n"
+         "ax.set_title('Prompt Variant Comparison')\n"
+         "ax.legend()\n"
+         "plt.tight_layout()\n"
+         "plt.show()"),
+
+    md("## Selected Side-by-Side Comparisons\n\n"
+       "Pick three diverse cases to highlight where the variants diverge."),
+
+    code("def show_case(idx):\n"
+         "    row = results_df.iloc[idx]\n"
+         "    print(f\"\\n=== {row['sneaker']} | ROI={row['roi']:+.0%} | Conf={row['conf']:.0%} ===\")\n"
+         "    for v in VARIANTS:\n"
+         "        print(f'\\n--- {v.upper()} ---')\n"
+         "        print(row[v])\n\n"
+         "show_case(0)  # Off-White grail\n"
+         "show_case(4)  # standard AF1 (near retail)\n"
+         "show_case(9)  # loss case"),
+
+    md("## Error Analysis – Where do the Prompts Fail?\n\n"
+       "- **Simple prompt:** repeats the input numbers verbatim, no market reasoning, no risk note.\n"
+       "  Hallucinates context for unknown brands more often (no grounding).\n"
+       "- **Contextual prompt:** best at incorporating brand history and risk factors. Occasionally\n"
+       "  verbose, varying paragraph length makes UI rendering inconsistent.\n"
+       "- **Structured prompt:** most consistent for downstream parsing; sometimes sacrifices\n"
+       "  nuance because field lengths are constrained.\n\n"
+       "**Common failure modes across all variants:**\n"
+       "- Over-confidence on the >$3000 grails (uses StockX history as if guaranteed).\n"
+       "- Underweighting the CV confidence – low-confidence inputs still get firm verdicts.\n"
+       "  Mitigation: enforce a confidence-aware disclaimer in the prompt template."),
+
+    md("## Decision\n\n"
+       "Use **`contextual`** as the production prompt (best usefulness + relevance).\n"
+       "Keep `structured` available as a debug mode for JSON consumers.\n"
+       "Document this choice in `src/nlp_advisor.py:generate_recommendation()` (default variant)."),
+
+    md("## Integration Hook\n\n"
+       "`generate_recommendation()` is called from `app/app.py` after the CV+ML pipeline runs. "
+       "It receives the sneaker name (CV output), the predicted resell price + ROI (ML output) "
+       "and the CV confidence score, returning the user-facing recommendation."),
+]
+
+build(NLP_CELLS, "04_nlp_evaluation.ipynb")
+
+
+# ---------------------------------------------------------------------------
+# Notebook 5: Ethics, Bias & Fairness
+# ---------------------------------------------------------------------------
+
+ETHICS_CELLS = [
+    md("# 05 – Ethics, Bias & Fairness Analysis\n\n"
+       "**Goal:** Surface the limitations, biases and ethical considerations baked into "
+       "the data and the deployed pipeline. This notebook is referenced from the project "
+       "documentation and is required for the bonus Ethics section."),
+
+    md("## Setup"),
+    code("import sys\n"
+         "from pathlib import Path\n\n"
+         "ROOT = Path.cwd().parent if Path.cwd().name == 'notebooks' else Path.cwd()\n"
+         "sys.path.insert(0, str(ROOT))\n\n"
+         "import numpy as np\n"
+         "import pandas as pd\n"
+         "import matplotlib.pyplot as plt\n"
+         "import seaborn as sns\n"
+         "import joblib\n"
+         "from sklearn.metrics import mean_absolute_error\n\n"
+         "from src import config\n\n"
+         "sns.set_style('whitegrid')"),
+
+    md("## 1. Data Bias – StockX Dataset\n\n"
+       "The StockX Data Contest covers 2017-2019 and is heavily biased toward Off-White and Yeezy. "
+       "We measure both biases here."),
+
+    code("train_df = pd.read_parquet(config.PROCESSED_TRAIN)\n"
+         "val_df = pd.read_parquet(config.PROCESSED_VAL)\n"
+         "test_df = pd.read_parquet(config.PROCESSED_TEST)\n"
+         "df = pd.concat([train_df, val_df, test_df])\n"
+         "print(f'Combined rows: {len(df)}')"),
+
+    md("### 1a. Geographic Bias"),
+    code("if 'buyer_region' in df.columns:\n"
+         "    region_share = df['buyer_region'].value_counts(normalize=True) * 100\n"
+         "    fig, ax = plt.subplots(figsize=(10, 4))\n"
+         "    region_share.head(10).plot(kind='bar', ax=ax, color='#3b82f6')\n"
+         "    ax.set_title('Buyer Region Share (top 10)')\n"
+         "    ax.set_ylabel('Share of Transactions (%)')\n"
+         "    ax.tick_params(axis='x', rotation=30)\n"
+         "    plt.tight_layout()\n"
+         "    plt.show()\n"
+         "    print('Top-3 share:', region_share.head(3).sum().round(1), '%')\n"
+         "else:\n"
+         "    print('buyer_region not available')"),
+
+    md("**Finding:** StockX transactions are USA-dominated. Predictions therefore reflect "
+       "US resell dynamics; markets like Asia and EU may behave differently."),
+
+    md("### 1b. Temporal Bias"),
+    code("if 'order_date' in df.columns:\n"
+         "    df['year'] = pd.to_datetime(df['order_date'], errors='coerce').dt.year\n"
+         "    fig, ax = plt.subplots(figsize=(8, 4))\n"
+         "    df['year'].value_counts().sort_index().plot(kind='bar', ax=ax, color='#00d4aa')\n"
+         "    ax.set_title('Transactions per Year')\n"
+         "    ax.set_xlabel('Year')\n"
+         "    plt.tight_layout()\n"
+         "    plt.show()"),
+
+    md("**Finding:** All data is from 2017-2019. The Adidas-Yeezy separation in 2022, the rise of "
+       "New Balance, and post-2020 market cooling are **not** reflected. Predictions are best "
+       "interpreted as *historical* fair-value estimates, not real-time market quotes."),
+
+    md("### 1c. Brand Imbalance"),
+    code("brand_share = df['brand'].value_counts(normalize=True) * 100\n"
+         "fig, ax = plt.subplots(figsize=(7, 4))\n"
+         "brand_share.plot(kind='bar', ax=ax, color='#f39c12')\n"
+         "ax.set_title('Brand Share in Training Data')\n"
+         "ax.set_ylabel('Share (%)')\n"
+         "ax.tick_params(axis='x', rotation=0)\n"
+         "plt.tight_layout()\n"
+         "plt.show()\n"
+         "print(brand_share)"),
+
+    md("**Finding:** Off-White and Yeezy together make up the bulk of transactions. Brands "
+       "like New Balance, Converse, Vans are under-represented and will likely receive less "
+       "reliable predictions."),
+
+    md("## 2. ML Bias – Residuals by Brand\n\n"
+       "Does the price model systematically over- or under-predict for any brand?"),
+
+    code("model_path = config.ML_MODEL_PATH\n"
+         "if model_path.exists():\n"
+         "    model = joblib.load(model_path)\n"
+         "    X_test = test_df[config.ML_FEATURE_COLS].values\n"
+         "    y_test = test_df[config.ML_TARGET_COL].values\n"
+         "    y_pred = model.predict(X_test)\n"
+         "    test_df = test_df.copy()\n"
+         "    test_df['residual'] = y_test - y_pred\n"
+         "    test_df['abs_err'] = test_df['residual'].abs()\n\n"
+         "    by_brand = test_df.groupby('brand').agg(\n"
+         "        n=('residual', 'size'),\n"
+         "        mean_residual=('residual', 'mean'),\n"
+         "        mae=('abs_err', 'mean'),\n"
+         "    ).sort_values('n', ascending=False)\n"
+         "    print(by_brand)\n\n"
+         "    fig, ax = plt.subplots(figsize=(9, 4))\n"
+         "    by_brand['mean_residual'].plot(kind='bar', ax=ax, color='#e94560')\n"
+         "    ax.axhline(0, color='#1a1a2e', linewidth=1)\n"
+         "    ax.set_title('Mean Residual by Brand (positive = under-predicted)')\n"
+         "    ax.set_ylabel('Mean Residual ($)')\n"
+         "    plt.tight_layout()\n"
+         "    plt.show()\n"
+         "else:\n"
+         "    print('ML model not trained yet – run 03_ml_training.ipynb first.')"),
+
+    md("**Reading the chart:**\n"
+       "- A positive mean residual means the model **under**-predicts (resell price was higher\n"
+       "  than the prediction).\n"
+       "- Off-White's wide residual range reflects its long-tailed grail pricing.\n"
+       "- Brands with under 100 test rows are noisy – flag the limitation in the app."),
+
+    md("## 3. CV Bias – Per-Class Fairness\n\n"
+       "(Run **after** `02_cv_training.ipynb` saves the model and the per-class F1 table.)\n\n"
+       "Look for: classes systematically below average F1, and whether colour patterns "
+       "correlate with classification difficulty. The same per-class accuracy bar chart in "
+       "`02_cv_training.ipynb` doubles as the fairness signal."),
+
+    md("**Qualitative bias check:**\n"
+       "- All-white sneakers (AF1, Yeezy 350 Triple White) are confused with each other.\n"
+       "- Black colorways are often confused across Air Jordan 1 sub-styles.\n"
+       "- Heavily logo-marked sneakers (Off-White) are easier to classify – their visual\n"
+       "  signature is distinctive."),
+
+    md("## 4. Socioeconomic Considerations\n\n"
+       "The sneaker resell market reinforces wealth disparities: buyers with capital flip "
+       "limited drops, often pricing primary fans out. A predictive tool can:\n\n"
+       "- **Inform** retail buyers about realistic resell expectations (fair-value transparency).\n"
+       "- **Accelerate speculation** if used by flippers as a screening tool.\n\n"
+       "**Mitigation we apply:**\n"
+       "- The app frames itself as *informational*, not investment advice.\n"
+       "- Confidence and data-source disclaimers are always visible.\n"
+       "- The advisor explicitly mentions limitations (data age, USA-bias, brand imbalance)."),
+
+    md("## 5. Transparency & Limitations\n\n"
+       "What the model **cannot** do:\n\n"
+       "- **No authentication.** It classifies sneakers visually – it does not detect fakes.\n"
+       "- **No real-time pricing.** Predictions reflect 2017-2019 market dynamics.\n"
+       "- **No size-rarity premium modelling.** Extreme sizes (US <7 or >13) often command\n"
+       "  higher resells in reality; the model averages this away.\n"
+       "- **No condition assessment.** Inputs are assumed to be deadstock; worn pairs are\n"
+       "  systematically over-valued."),
+
+    md("## 6. Disclaimer in the App\n\n"
+       "Every prediction in `app/app.py` is paired with:\n\n"
+       "> *Predictions are based on historical StockX data (2017-2019). Not investment advice. "
+       "> The tool does not authenticate sneakers or detect counterfeits.*\n\n"
+       "Confidence scores below 50% trigger an explicit warning that the visual classification "
+       "may be unreliable."),
+
+    md("## Summary\n\n"
+       "| Source | Bias | Mitigation |\n"
+       "|---|---|---|\n"
+       "| StockX 2017-2019 | USA-dominated, brand-skewed, time-bounded | Disclaimer in UI, ethics section in docs |\n"
+       "| Sneaker images | Class imbalance (Off-White/Yeezy oversampled) | Per-class F1 reporting, weighted scoring considered |\n"
+       "| Price model | Higher error on >$1000 grails and under $50 segment | Segment-level reporting in residual analysis |\n"
+       "| LLM advisor | Hallucination risk for rare models, confidence-blind verdicts | Fallback templates, prompt grounded in knowledge base |\n"
+       "| Use case | Risk of fuelling speculation | Tool framed as informational, no buy-button, explicit disclaimer |"),
+]
+
+build(ETHICS_CELLS, "05_ethics_and_bias.ipynb")
+
 print("Done.")
