@@ -1,9 +1,13 @@
 """Basic tests for the SneakerScout pipeline modules."""
 
 import json
+import sys
 from pathlib import Path
 
 import pytest
+
+# Ensure project root on path when running pytest from any directory
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src import config
 from src.nlp_advisor import (
@@ -14,8 +18,14 @@ from src.nlp_advisor import (
     build_structured_prompt,
     _fallback_recommendation,
 )
-from src.preprocessing import get_eval_transforms, get_train_transforms
-from src.ml_model import _extract_brand, _size_category
+
+# Torch-dependent imports are optional – skip those tests if unavailable
+try:
+    from src.preprocessing import get_eval_transforms, get_train_transforms
+    from src.ml_model import _extract_brand, _size_category
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
 
 
 # ---------------------------------------------------------------------------
@@ -102,21 +112,25 @@ def test_fallback_hold():
 
 
 # ---------------------------------------------------------------------------
-# ML helpers
+# ML helpers (require torch via src.ml_model)
 # ---------------------------------------------------------------------------
 
+@pytest.mark.skipif(not TORCH_AVAILABLE, reason="torch not installed")
 def test_brand_extraction_jordan():
     assert _extract_brand("Air Jordan 1 Retro High") == "Nike"
 
 
+@pytest.mark.skipif(not TORCH_AVAILABLE, reason="torch not installed")
 def test_brand_extraction_yeezy():
     assert _extract_brand("Yeezy Boost 350 V2") == "Adidas"
 
 
+@pytest.mark.skipif(not TORCH_AVAILABLE, reason="torch not installed")
 def test_brand_extraction_new_balance():
     assert _extract_brand("New Balance 550 White") == "New Balance"
 
 
+@pytest.mark.skipif(not TORCH_AVAILABLE, reason="torch not installed")
 def test_size_category():
     assert _size_category(7) == "small"
     assert _size_category(10) == "medium"
@@ -127,6 +141,7 @@ def test_size_category():
 # Transforms
 # ---------------------------------------------------------------------------
 
+@pytest.mark.skipif(not TORCH_AVAILABLE, reason="torch not installed")
 def test_eval_transforms_output_shape():
     from PIL import Image
     img = Image.new("RGB", (300, 400), color="red")
@@ -135,6 +150,7 @@ def test_eval_transforms_output_shape():
     assert out.shape == (3, 224, 224)
 
 
+@pytest.mark.skipif(not TORCH_AVAILABLE, reason="torch not installed")
 def test_train_transforms_output_shape():
     from PIL import Image
     img = Image.new("RGB", (300, 400), color="blue")
