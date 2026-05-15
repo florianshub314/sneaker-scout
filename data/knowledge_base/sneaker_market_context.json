@@ -1,0 +1,136 @@
+{
+  "metadata": {
+    "source": "StockX Data Contest (2017-2019) + curated market knowledge",
+    "last_updated": "2025-01",
+    "disclaimer": "Historical data. Not investment advice."
+  },
+  "brands": {
+    "Nike": {
+      "market_share_pct": 36,
+      "typical_resell_premium_pct": 35,
+      "notes": "Marktführer, breite Produktpalette. Air Jordan Linie hat höchste Resell-Werte. Limitierte Releases werden oft sofort flippt."
+    },
+    "Adidas": {
+      "market_share_pct": 22,
+      "typical_resell_premium_pct": 28,
+      "notes": "Yeezy-Linie dominiert Resell. Andere Adidas-Modelle haben oft niedrigeren Premium."
+    },
+    "New Balance": {
+      "market_share_pct": 8,
+      "typical_resell_premium_pct": 15,
+      "notes": "Wachsender Markt seit 2021 (Aimé Leon Dore Kollabos). In StockX-Daten 2017-2019 unterrepräsentiert."
+    },
+    "Off-White": {
+      "market_share_pct": 12,
+      "typical_resell_premium_pct": 220,
+      "notes": "Höchste Resell-Premiums. Virgil Abloh Designer-Kollabos. Sehr volatil nach Tod von Abloh 2021."
+    },
+    "Converse": {
+      "market_share_pct": 4,
+      "typical_resell_premium_pct": 10,
+      "notes": "Niedriger Resell-Wert, ausser bei Designer-Kollabos."
+    }
+  },
+  "models": {
+    "Air Jordan 1": {
+      "brand": "Nike",
+      "category": "Lifestyle / Basketball Retro",
+      "release_year_range": "1985-present (Retros laufend)",
+      "typical_retail_usd": 170,
+      "typical_resell_usd_range": [200, 800],
+      "demand_level": "high",
+      "hold_strategy": "6-12 Monate nach Release oft Peak. Colorways mit Storytelling halten Wert besser.",
+      "risk_factors": ["Hohe Stückzahlen bei General Releases", "Fake-Quote hoch"]
+    },
+    "Yeezy Boost 350": {
+      "brand": "Adidas",
+      "category": "Lifestyle",
+      "release_year_range": "2015-present",
+      "typical_retail_usd": 220,
+      "typical_resell_usd_range": [180, 400],
+      "demand_level": "medium",
+      "hold_strategy": "Restocks haben Resell-Preise gedrückt. Original-Colorways behalten Wert.",
+      "risk_factors": ["Adidas-Yeezy Trennung 2022", "Häufige Restocks senken Knappheit"]
+    },
+    "Yeezy Boost 700": {
+      "brand": "Adidas",
+      "category": "Lifestyle",
+      "release_year_range": "2017-present",
+      "typical_retail_usd": 300,
+      "typical_resell_usd_range": [250, 600],
+      "demand_level": "medium",
+      "hold_strategy": "Dad-Shoe Trend rückläufig, aber stabiler Nischen-Markt.",
+      "risk_factors": ["Trend-Abhängigkeit"]
+    },
+    "Nike Air Force 1": {
+      "brand": "Nike",
+      "category": "Lifestyle Classic",
+      "release_year_range": "1982-present",
+      "typical_retail_usd": 110,
+      "typical_resell_usd_range": [100, 300],
+      "demand_level": "high",
+      "hold_strategy": "Standard-Modell selten Resell-Wert. Kollabos (Off-White, Travis Scott) explodieren.",
+      "risk_factors": ["Standard-Variante hat keinen Premium"]
+    },
+    "Nike Dunk Low": {
+      "brand": "Nike",
+      "category": "Lifestyle / Skate",
+      "release_year_range": "1985, Revival 2020",
+      "typical_retail_usd": 110,
+      "typical_resell_usd_range": [120, 500],
+      "demand_level": "high",
+      "hold_strategy": "Stark in 2020-2022, sättigender Markt seit 2023.",
+      "risk_factors": ["Markt-Übersättigung", "Hype-Zyklus möglicherweise abgelaufen"]
+    },
+    "Off-White Air Jordan 1": {
+      "brand": "Nike x Off-White",
+      "category": "Designer Collaboration",
+      "release_year_range": "2017-2018",
+      "typical_retail_usd": 190,
+      "typical_resell_usd_range": [1500, 8000],
+      "demand_level": "very_high",
+      "hold_strategy": "Grail-Status. Long-term Hold meist beste Strategie.",
+      "risk_factors": ["Sehr volatil", "Fake-Quote extrem hoch", "Authentication kritisch"]
+    },
+    "Off-White Air Presto": {
+      "brand": "Nike x Off-White",
+      "category": "Designer Collaboration",
+      "release_year_range": "2017-2018",
+      "typical_retail_usd": 160,
+      "typical_resell_usd_range": [800, 2500],
+      "demand_level": "high",
+      "hold_strategy": "The Ten Collection, hoher Sammlerwert.",
+      "risk_factors": ["Volatilität bei Markt-Trends"]
+    },
+    "New Balance 550": {
+      "brand": "New Balance",
+      "category": "Lifestyle Retro",
+      "release_year_range": "2020-present",
+      "typical_retail_usd": 110,
+      "typical_resell_usd_range": [100, 250],
+      "demand_level": "medium",
+      "hold_strategy": "Aimé Leon Dore Kollabos sind Werttreiber. Standard-Releases haben kleinen Premium.",
+      "risk_factors": ["In StockX 2017-2019 Daten kaum vorhanden"]
+    }
+  },
+  "market_trends": {
+    "general": [
+      "Resell-Markt wuchs 2017-2019 stark (StockX, GOAT, StadiumGoods)",
+      "Premium-Sneaker (>$500 Resell) machen kleinen Anteil aus, aber generieren Aufmerksamkeit",
+      "Retail-Releases mit niedrigen Stückzahlen haben höchste Flip-Wahrscheinlichkeit"
+    ],
+    "size_dynamics": "Mittlere Grössen (US 9-11) haben dichteste Nachfrage. Extreme Grössen (<7, >13) oft niedrigerer Resell.",
+    "regional_dynamics": "USA dominiert StockX-Daten (~80%). EU und Asia wachsen seit 2020 stark."
+  },
+  "default": {
+    "notes": "Begrenzte Marktdaten für dieses Modell. Schätzung basiert auf Brand-Durchschnitt.",
+    "limitations": "Keine modellspezifische Historie verfügbar."
+  },
+  "limitations": [
+    "Daten 2017-2019: Heutige Marktdynamik kann abweichen",
+    "USA-Bias: Globaler Markt nicht voll repräsentiert",
+    "Off-White und Yeezy dominieren Trainingsdaten",
+    "Keine Berücksichtigung von Authentifizierung / Fakes",
+    "Keine Echtzeit-Preise"
+  ]
+}

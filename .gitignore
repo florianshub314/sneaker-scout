@@ -1,0 +1,57 @@
+# API Keys & Secrets
+.env
+*.env
+.env.local
+
+# Raw Data (download manually per data/raw/README.md)
+data/raw/*
+!data/raw/README.md
+!data/raw/.gitkeep
+*.csv
+*.xlsx
+*.zip
+
+# Trained Models (large binaries)
+models/cv_model/*.bin
+models/cv_model/*.safetensors
+models/cv_model/*.pth
+models/cv_model/*.pt
+models/ml_model/*.joblib
+models/ml_model/*.pkl
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Processed data (reproducible from raw)
+data/processed/*.csv
+data/processed/*.parquet
+
+# HuggingFace cache
+.cache/
