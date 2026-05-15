@@ -74,6 +74,22 @@ sneaker-scout/
 └── documentation.md          # project documentation (course template)
 ```
 
+## Notebooks
+
+| Notebook | Purpose |
+|---|---|
+| `01_eda_stockx.ipynb` | EDA + feature engineering + train/val/test split |
+| `02_cv_training.ipynb` | ViT fine-tuning + ResNet50 comparison + per-class evaluation |
+| `03_ml_training.ipynb` | Ridge / RF / GBM comparison + hyperparameter tuning + residuals |
+| `04_nlp_evaluation.ipynb` | Three prompt variants + rubric-based comparison |
+| `05_ethics_and_bias.ipynb` | Data bias, ML bias, CV fairness, socioeconomic considerations |
+
+## Tests
+
+```bash
+pytest tests/ -q
+```
+
 ## Live Demo
 
 https://huggingface.co/spaces/muellfl/sneaker-scout
