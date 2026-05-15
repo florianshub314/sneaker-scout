@@ -34,6 +34,11 @@ build/
 .ipynb_checkpoints/
 *.ipynb_checkpoints
 
+# Test caches
+.pytest_cache/
+.coverage
+htmlcov/
+
 # OS
 .DS_Store
 Thumbs.db
