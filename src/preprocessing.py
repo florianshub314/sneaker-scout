@@ -62,13 +62,25 @@ def load_stockx_data(data_dir: Path) -> pd.DataFrame:
 
 
 def clean_stockx_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Standardise column names to snake_case."""
+    """Standardise column names to snake_case and strip BOM markers."""
     df = df.copy()
     df.columns = [
-        re.sub(r"\s+", "_", col.strip().lower().replace("-", "_"))
+        re.sub(r"\s+", "_", col.strip().lstrip("﻿").lower().replace("-", "_"))
         for col in df.columns
     ]
     return df
+
+
+def parse_currency(series: pd.Series) -> pd.Series:
+    """Convert a currency-formatted column ('$1,097') to a float series."""
+    if series.dtype.kind in {"f", "i"}:
+        return series.astype(float)
+    return (
+        series.astype(str)
+        .str.replace(r"[\$,\s]", "", regex=True)
+        .replace({"": None, "nan": None})
+        .astype(float)
+    )
 
 
 def parse_stockx_dates(df: pd.DataFrame) -> pd.DataFrame:
@@ -77,6 +89,15 @@ def parse_stockx_dates(df: pd.DataFrame) -> pd.DataFrame:
     for col in ("order_date", "release_date"):
         if col in df.columns:
             df[col] = pd.to_datetime(df[col], errors="coerce")
+    return df
+
+
+def normalise_stockx_prices(df: pd.DataFrame) -> pd.DataFrame:
+    """Strip $ and commas from sale_price and retail_price."""
+    df = df.copy()
+    for col in ("sale_price", "retail_price"):
+        if col in df.columns:
+            df[col] = parse_currency(df[col])
     return df
 
 

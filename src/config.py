@@ -42,7 +42,7 @@ RESNET_BASE_MODEL = "microsoft/resnet-50"
 # ---------------------------------------------------------------------------
 IMAGE_SIZE = 224
 CV_BATCH_SIZE = 32
-CV_NUM_EPOCHS = 15
+CV_NUM_EPOCHS = 5
 CV_LEARNING_RATE = 2e-5
 CV_WEIGHT_DECAY = 0.01
 CV_WARMUP_STEPS = 100
@@ -68,7 +68,7 @@ ML_FEATURE_COLS = [
     "month",
     "quarter",
     "size_category_encoded",
-    "region_encoded",
+    "buyer_region_encoded",
     "sneaker_name_encoded",
 ]
 ML_TARGET_COL = "sale_price"

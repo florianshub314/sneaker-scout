@@ -82,7 +82,8 @@ EDA_CELLS = [
          "from src import config\n"
          "from src.preprocessing import (\n"
          "    load_stockx_data, clean_stockx_columns, parse_stockx_dates,\n"
-         "    engineer_stockx_features, encode_categorical_features, split_data,\n"
+         "    normalise_stockx_prices, engineer_stockx_features,\n"
+         "    encode_categorical_features, split_data,\n"
          ")\n\n"
          "sns.set_style('whitegrid')\n"
          "plt.rcParams['figure.dpi'] = 100\n"
@@ -95,10 +96,13 @@ EDA_CELLS = [
 
     code("df_raw.info()"),
 
-    md("## Clean column names and parse dates"),
+    md("## Clean column names, parse dates and normalise prices"),
     code("df = clean_stockx_columns(df_raw)\n"
+         "df = normalise_stockx_prices(df)\n"
          "df = parse_stockx_dates(df)\n"
          "print('Columns:', list(df.columns))\n"
+         "print('\\nDtype check (price columns should be float):')\n"
+         "print(df[['sale_price', 'retail_price']].dtypes)\n"
          "df.head()"),
 
     md("## Distribution Analysis\n\n"
@@ -232,7 +236,7 @@ EDA_CELLS = [
 
     code("df_feat[['retail_price', 'days_since_release', 'shoe_size',\n"
          "         'brand_encoded', 'month', 'quarter',\n"
-         "         'size_category_encoded', 'region_encoded',\n"
+         "         'size_category_encoded', 'buyer_region_encoded',\n"
          "         'sneaker_name_encoded', 'sale_price']].describe()"),
 
     md("## Train/Validation/Test Split (70/15/15)"),
@@ -446,7 +450,7 @@ CV_CELLS = [
          "    learning_rate=config.CV_LEARNING_RATE,\n"
          "    weight_decay=config.CV_WEIGHT_DECAY,\n"
          "    warmup_steps=config.CV_WARMUP_STEPS,\n"
-         "    eval_strategy='epoch',\n"
+         "    evaluation_strategy='epoch',\n"
          "    save_strategy='epoch',\n"
          "    save_total_limit=2,\n"
          "    load_best_model_at_end=True,\n"

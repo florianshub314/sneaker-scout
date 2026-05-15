@@ -69,7 +69,9 @@ class PricePredictor:
             mapping = self.encoders.get(col, {})
             row[encoded_col] = mapping.get(raw_val, -1)
 
-        feature_vec = np.array([row.get(c, 0) for c in ML_FEATURE_COLS], dtype=np.float32)
+        feature_vec = np.array(
+            [row.get(c, 0) for c in ML_FEATURE_COLS], dtype=np.float32
+        )
         return feature_vec.reshape(1, -1)
 
     def predict(
