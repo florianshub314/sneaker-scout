@@ -5,6 +5,13 @@ import os
 from pathlib import Path
 from typing import Optional
 
+# Load .env from project root if present (no-op when file missing or var already set)
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+except ImportError:
+    pass
+
 from src.config import (
     KNOWLEDGE_BASE_FILE,
     OPENAI_MODEL,
