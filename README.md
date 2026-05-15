@@ -92,7 +92,7 @@ pytest tests/ -q
 
 ## Live Demo
 
-https://huggingface.co/spaces/muellfl/sneaker-scout
+https://huggingface.co/spaces/florianshub314/sneaker-scout
 
 ## Documentation
 

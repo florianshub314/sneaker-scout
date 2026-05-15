@@ -25,9 +25,9 @@ Reference to multiple lines in `train.py`, lines 15-38:
 ## Project Metadata
 
 - Project title: **SneakerScout – AI-Powered Sneaker Recognition & Resell Advisor**
-- Student: **F. Müller** (GitHub: `muellfl`, HuggingFace: `muellfl`)
-- GitHub repository URL: https://github.com/muellfl/sneaker-scout
-- Deployment URL: https://huggingface.co/spaces/muellfl/sneaker-scout
+- Student: **F. Müller** (GitHub: `florianshub314`, HuggingFace: `florianshub314`)
+- GitHub repository URL: https://github.com/florianshub314/sneaker-scout
+- Deployment URL: https://huggingface.co/spaces/florianshub314/sneaker-scout
 - Submission date: 2026-06-07
 
 ### Mandatory Setup Checks
@@ -274,7 +274,7 @@ Evidence hint: Include sample outputs and observed failure cases.
 
 ## 3. Deployment
 
-- Deployment URL: https://huggingface.co/spaces/muellfl/sneaker-scout
+- Deployment URL: https://huggingface.co/spaces/florianshub314/sneaker-scout
 - Main user flow:
   1. User opens the Space, lands on the **Analyse** tab.
   2. Drag-and-drops a sneaker photo (or picks one of the provided examples).
@@ -293,7 +293,7 @@ Evidence hint: Add screenshots or short demo references.
 
 - Environment setup:
   ```bash
-  git clone https://github.com/muellfl/sneaker-scout.git
+  git clone https://github.com/florianshub314/sneaker-scout.git
   cd sneaker-scout
   python -m venv .venv && source .venv/bin/activate
   pip install -r requirements.txt
