@@ -37,6 +37,9 @@ LABEL_ENCODER_PATH = MODELS_DIR / "ml_model" / "label_encoders.joblib"
 VIT_BASE_MODEL = "google/vit-base-patch16-224"
 RESNET_BASE_MODEL = "microsoft/resnet-50"
 
+# Fine-tuned model on HF Hub (used when local weights are absent, e.g. on HF Spaces)
+CV_HF_MODEL_ID = os.environ.get("CV_HF_MODEL_ID", "muellfl/sneaker-scout-vit")
+
 # ---------------------------------------------------------------------------
 # CV constants
 # ---------------------------------------------------------------------------

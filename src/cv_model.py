@@ -9,6 +9,7 @@ from PIL import Image
 from transformers import ViTForImageClassification, ViTImageProcessor
 
 from src.config import (
+    CV_HF_MODEL_ID,
     CV_MODEL_DIR,
     CV_CONFIDENCE_THRESHOLD,
     CV_HIGH_CONFIDENCE,
@@ -21,8 +22,9 @@ from src.preprocessing import get_eval_transforms, load_image
 class SneakerClassifier:
     """Wraps a fine-tuned ViT model for sneaker classification inference.
 
-    Loads model weights and label mappings from CV_MODEL_DIR.
-    Falls back to a descriptive error if the model is not yet trained.
+    Prefers a locally trained model under CV_MODEL_DIR; falls back to the
+    published checkpoint on the Hugging Face Hub (CV_HF_MODEL_ID) when no
+    local weights are present, e.g. on a fresh Space or CI runner.
     """
 
     def __init__(self, model_dir: Path = CV_MODEL_DIR, device: Optional[str] = None):
@@ -35,28 +37,35 @@ class SneakerClassifier:
         self.id2label: dict[int, str] = {}
         self._loaded = False
 
+    def _resolve_source(self) -> str:
+        """Return a local path string if weights exist locally, else the HF Hub id."""
+        has_local_weights = (
+            self.model_dir.exists()
+            and ((self.model_dir / "model.safetensors").exists()
+                 or (self.model_dir / "pytorch_model.bin").exists())
+        )
+        return str(self.model_dir) if has_local_weights else CV_HF_MODEL_ID
+
     def load(self) -> None:
-        """Load model weights, processor, and label mapping from disk."""
+        """Load model weights, processor, and label mapping (local first, then HF Hub)."""
         if self._loaded:
             return
 
-        if not self.model_dir.exists() or not any(self.model_dir.iterdir()):
-            raise RuntimeError(
-                f"CV model not found at {self.model_dir}. "
-                "Run notebooks/02_cv_training.ipynb first."
-            )
-
-        self.processor = ViTImageProcessor.from_pretrained(str(self.model_dir))
-        self.model = ViTForImageClassification.from_pretrained(str(self.model_dir))
+        source = self._resolve_source()
+        self.processor = ViTImageProcessor.from_pretrained(source)
+        self.model = ViTForImageClassification.from_pretrained(source)
         self.model.to(self.device)
         self.model.eval()
 
-        # Load label map saved during training
+        # Prefer id2label.json next to the local weights; fall back to the value
+        # embedded in the model config (populated from config.json on the Hub).
         label_map_path = self.model_dir / "id2label.json"
         if label_map_path.exists():
             with open(label_map_path) as f:
                 raw = json.load(f)
             self.id2label = {int(k): v for k, v in raw.items()}
+        elif self.model.config.id2label:
+            self.id2label = {int(k): v for k, v in self.model.config.id2label.items()}
         else:
             self.id2label = {i: str(i) for i in range(self.model.config.num_labels)}
 
