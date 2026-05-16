@@ -21,9 +21,9 @@ Image ─► CV (ViT) ─► Model + Confidence
 | Block | Technology |
 |---|---|
 | Computer Vision | HuggingFace Transformers, ViT (`google/vit-base-patch16-224`), ResNet50 comparison |
-| Numeric ML | scikit-learn, XGBoost, LightGBM |
+| Numeric ML | scikit-learn, XGBoost |
 | NLP | OpenAI GPT-4o-mini, three prompt variants |
-| App | Gradio 4 |
+| App | Gradio 5 |
 | Deployment | HuggingFace Spaces |
 
 ## Quick Start
@@ -92,7 +92,8 @@ pytest tests/ -q
 
 ## Live Demo
 
-https://huggingface.co/spaces/florianshub314/sneaker-scout
+App: https://huggingface.co/spaces/muellfl/sneaker-scout
+Fine-tuned CV model: https://huggingface.co/muellfl/sneaker-scout-vit
 
 ## Documentation
 
