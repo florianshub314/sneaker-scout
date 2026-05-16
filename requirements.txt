@@ -25,7 +25,8 @@ seaborn==0.13.2
 plotly==5.21.0
 
 # App
-gradio==4.31.5
+gradio==5.50.0
+huggingface_hub>=0.24
 
 # Utilities
 python-dotenv==1.0.1
