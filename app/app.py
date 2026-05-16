@@ -286,6 +286,17 @@ _HIDE_OVERRIDE = (
 )
 
 
+def _all_class_choices() -> list[str]:
+    """All trained class names, sorted, for the manual-override dropdown.
+
+    Pulled from the loaded classifier so it stays in sync with the deployed
+    model (and works whether weights are local or fetched from HF Hub).
+    """
+    clf = get_classifier()
+    clf.load()
+    return sorted(clf.id2label.values())
+
+
 def analyse(image: Optional[Image.Image], shoe_size: float, retail_price: float):
     if image is None:
         empty = ('<div class="result-card" style="color: #8a8a9a;">'
@@ -309,13 +320,15 @@ def analyse(image: Optional[Image.Image], shoe_size: float, retail_price: float)
             *_HIDE_OVERRIDE,
         )
 
-    # Low-confidence path: skip auto-ML/NLP, surface a top-3 picker so the user
-    # can confirm the right class and trigger price prediction manually.
+    # Low-confidence path: skip auto-ML/NLP, surface a manual picker.
+    # The dropdown holds ALL trained classes (typable + searchable) so the
+    # user can recover even when the top-3 contains nothing correct. The
+    # top-1 guess is pre-selected; the top-3 are displayed in the result HTML
+    # for quick orientation.
     if confidence < config.CV_CONFIDENCE_THRESHOLD:
-        choices = [(f"{name} ({int(round(p * 100))}%)", name) for name, p in top3]
         return (
             _render_low_confidence(sneaker_name, confidence, top3),
-            gr.update(choices=choices, value=top3[0][0], visible=True),
+            gr.update(choices=_all_class_choices(), value=top3[0][0], visible=True),
             gr.update(visible=True),
         )
 
@@ -511,11 +524,13 @@ def build_app() -> gr.Blocks:
                                   'Lade ein Sneaker-Foto hoch und klicke <b>Analysieren</b>.</div>'
                         )
                         # Hidden until a low-confidence CV result needs manual review.
+                        # Holds all trained classes; type to filter.
                         override_dd = gr.Dropdown(
                             choices=[],
-                            label="Korrekte Klasse aus den Top-3 waehlen",
+                            label="Klasse korrigieren (alle Modelle, tippen zum Filtern)",
                             visible=False,
                             interactive=True,
+                            filterable=True,
                         )
                         override_btn = gr.Button(
                             "Mit dieser Klasse Preis berechnen",
