@@ -154,6 +154,7 @@ Notebook reference: [`03_ml_training.ipynb`](notebooks/03_ml_training.ipynb).
   - **Off-White** brand has the widest residual range – its pricing is driven by hype dynamics not captured by the static features.
   - Sub-$250 predictions sometimes over-shoot retail because the dataset rarely contains losses – the model is biased toward positive ROI.
   - Segment-level error breakdown: see *Price Segment Analysis* in [`03_ml_training.ipynb`](notebooks/03_ml_training.ipynb).
+- **Operational guard:** at inference time the predicted price is clipped to `[0.5 × retail, 3 × retail]`. The lower bound prevents fire-sale predictions on rare SKUs; the upper bound prevents the model from extrapolating into hype-tier territory when the CV block hands over a label that the encoder cannot resolve (mapped to −1). See [`src/ml_model.py`, `PricePredictor.predict()`](src/ml_model.py).
 
 #### 2A.6 Integration with Other Block(s)
 - Inputs received from other block(s):
@@ -253,12 +254,14 @@ Notebook reference: [`02_cv_training.ipynb`](notebooks/02_cv_training.ipynb).
 
 #### 2C.5 Evaluation and Error Analysis
 - Metrics and/or visual checks: macro Accuracy, Precision, Recall, F1; per-class F1 barplot; confusion matrix heatmap; visual sample-prediction grid for both correct and incorrect cases.
-- Final results: ViT outperforms ResNet50 on macro F1, particularly on under-represented classes. Exact numbers populate after the notebook runs and live in the *Model Comparison* and *Per-Class Accuracy* sections of [`02_cv_training.ipynb`](notebooks/02_cv_training.ipynb).
+- Final results (5-epoch fine-tune of ViT-base over 51 classes, ~5.9k images): **Top-1 accuracy ≈ 50%, macro F1 ≈ 0.44**. Random baseline over 51 classes is 2%, so the model has learned strong but imperfect class structure. ViT outperforms the frozen-backbone ResNet50 baseline on macro F1; per-class breakdown lives in the *Model Comparison* and *Per-Class Accuracy* sections of [`02_cv_training.ipynb`](notebooks/02_cv_training.ipynb).
 - Error patterns and limitations:
-  - **All-white sneakers** (Yeezy 350 Triple White, AF1 White) confuse one another – pure colour signal, similar silhouette.
+  - **Limited training budget.** Accuracy is bounded by 5 epochs on a single Apple-Silicon GPU; longer runs (15+ epochs) would likely lift top-1 by another 10–15 pp but were out of scope for the time budget.
+  - **All-white sneakers** (Yeezy 350 Triple White, AF1 White, Reebok Club C 85) confuse one another – pure colour signal, similar silhouette. Live example: an Air Force 1 stock photo classifies as `reebok_club_c_85` at ~12% confidence.
   - **Air Jordan 1 sub-styles** are inter-confused, especially when the photo crops out the toe-box.
   - The model **does not detect authenticity** – it matches form, not provenance. This is the most operationally important limitation and is repeated in the app disclaimer.
   - Side-on vs front-on photos perform unevenly; future work could augment with more 3/4-angle examples.
+- **App-side mitigation:** when CV confidence falls below `CV_CONFIDENCE_THRESHOLD` (0.50), the app short-circuits and shows only the top-3 alternatives plus a warning – the price and recommendation panels are deliberately suppressed because feeding a misclassified label into the ML block produces meaningless numbers (the StockX label-encoder maps unknown SKUs to −1 and XGBoost then extrapolates wildly). See [`app/app.py`, `analyse()`, low-confidence branch](app/app.py).
 
 #### 2C.6 Integration with Other Block(s)
 - Inputs received from other block(s): none – CV is the entry point of the pipeline (consumes the raw uploaded image).
