@@ -31,8 +31,8 @@ theme = gr.themes.Base(
     primary_hue=gr.themes.colors.blue,
     secondary_hue=gr.themes.colors.gray,
     neutral_hue=gr.themes.colors.gray,
-    font=gr.themes.GoogleFont("Inter"),
-    font_mono=gr.themes.GoogleFont("JetBrains Mono"),
+    font=[gr.themes.GoogleFont("Inter"), "sans-serif"],
+    font_mono=[gr.themes.GoogleFont("JetBrains Mono"), "monospace"],
 ).set(
     body_background_fill="#0f0f0f",
     body_background_fill_dark="#0f0f0f",
@@ -148,6 +148,47 @@ def _format_roi(r: float) -> str:
 # Result rendering
 # ---------------------------------------------------------------------------
 
+def _render_low_confidence(
+    sneaker_name: str,
+    confidence: float,
+    top3: list[tuple[str, float]],
+) -> str:
+    """Render a low-confidence result: warning + top-3 alternatives, no price block.
+
+    Price prediction is suppressed because feeding a misclassified label into the
+    resell model produces meaningless numbers.
+    """
+    conf_pct = int(round(confidence * 100))
+    alts = "".join(
+        f'<li><span style="color: #e0e0e0;">{name}</span>'
+        f'<span style="color: #8a8a9a; margin-left: 8px;">{int(round(p * 100))}%</span></li>'
+        for name, p in top3
+    )
+    return f"""
+<div style="padding: 16px; background: #f39c1215; border-left: 3px solid #f39c12; border-radius: 4px; margin-bottom: 16px;">
+  <div style="color: #f39c12; font-weight: 600; font-size: 16px; margin-bottom: 6px;">
+    Sneaker konnte nicht zuverlaessig erkannt werden (Confidence {conf_pct}%).
+  </div>
+  <div style="color: #c0c0c0;">
+    Preis- und Empfehlungsschritte wurden uebersprungen, um irrefuehrende Werte zu vermeiden.
+    Bitte ein klareres Foto aus einem anderen Winkel oder mit besserer Beleuchtung versuchen.
+  </div>
+</div>
+
+<div class="result-card">
+  <div class="result-label">Beste Vermutung</div>
+  <div class="result-value value-default" style="font-size: 22px;">{sneaker_name}</div>
+  <div class="result-label" style="margin-top: 16px;">Naechstbeste Modelle</div>
+  <ul style="list-style: none; padding: 0; margin: 8px 0 0;">{alts}</ul>
+</div>
+
+<div class="disclaimer">
+  Daten: StockX 2017-2019 | Modelle: ViT + GBM + GPT-4o-mini |
+  Keine Anlageberatung. Nur zu Informationszwecken. Keine Faelschungserkennung.
+</div>
+"""
+
+
 def _render_results(
     sneaker_name: str,
     confidence: float,
@@ -167,18 +208,7 @@ def _render_results(
         ("value-negative" if roi < -0.1 else "value-neutral")
     )
 
-    low_conf_warn = ""
-    if confidence < 0.5:
-        low_conf_warn = (
-            '<div style="margin-bottom: 16px; padding: 12px; '
-            'background: #f39c1215; border-left: 3px solid #f39c12; border-radius: 4px;">'
-            '<span style="color: #f39c12; font-weight: 600;">'
-            'Sneaker konnte nicht zuverlaessig erkannt werden.</span> '
-            'Bitte ein klareres Foto verwenden.</div>'
-        )
-
     return f"""
-{low_conf_warn}
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
   <div class="result-card">
     <div class="result-label">Modell</div>
@@ -217,25 +247,9 @@ def _render_results(
 # Main analyse callback
 # ---------------------------------------------------------------------------
 
-def analyse(image: Optional[Image.Image], shoe_size: float, retail_price: float) -> str:
-    if image is None:
-        return ('<div class="result-card" style="color: #8a8a9a;">'
-                'Bitte zuerst ein Sneaker-Foto hochladen.</div>')
-
-    # Defaults if user leaves inputs empty
-    if shoe_size is None:
-        shoe_size = 10.0
-    if retail_price is None or retail_price <= 0:
-        retail_price = 150.0
-
-    # 1) CV
-    try:
-        classifier = get_classifier()
-        sneaker_name, confidence = classifier.predict(image)
-    except Exception as e:
-        return f'<div class="result-card" style="color: #e94560;">CV-Modell nicht verfügbar: {e}</div>'
-
-    # 2) ML
+def _run_ml_nlp(sneaker_name: str, confidence: float, shoe_size: float, retail_price: float) -> str:
+    """Shared ML + NLP path, used both by the automatic high-confidence flow
+    and by the manual override (user-picked top-3 alternative)."""
     try:
         predictor = get_predictor()
         predicted_price, roi = predictor.predict(
@@ -247,7 +261,6 @@ def analyse(image: Optional[Image.Image], shoe_size: float, retail_price: float)
     except Exception as e:
         return f'<div class="result-card" style="color: #e94560;">Preis-Modell nicht verfügbar: {e}</div>'
 
-    # 3) NLP
     recommendation = generate_recommendation(
         sneaker_name=sneaker_name,
         confidence=confidence,
@@ -255,7 +268,6 @@ def analyse(image: Optional[Image.Image], shoe_size: float, retail_price: float)
         retail_price=retail_price,
         roi=roi,
     )
-
     return _render_results(
         sneaker_name=sneaker_name,
         confidence=confidence,
@@ -264,6 +276,75 @@ def analyse(image: Optional[Image.Image], shoe_size: float, retail_price: float)
         roi=roi,
         recommendation=recommendation,
     )
+
+
+# Empty/hidden updates for the override widgets (used on every high-confidence path
+# and on the override callback itself, so the dropdown collapses after use).
+_HIDE_OVERRIDE = (
+    gr.update(choices=[], value=None, visible=False),
+    gr.update(visible=False),
+)
+
+
+def analyse(image: Optional[Image.Image], shoe_size: float, retail_price: float):
+    if image is None:
+        empty = ('<div class="result-card" style="color: #8a8a9a;">'
+                 'Bitte zuerst ein Sneaker-Foto hochladen.</div>')
+        return empty, *_HIDE_OVERRIDE
+
+    # Defaults if user leaves inputs empty
+    if shoe_size is None:
+        shoe_size = 10.0
+    if retail_price is None or retail_price <= 0:
+        retail_price = 150.0
+
+    # 1) CV
+    try:
+        classifier = get_classifier()
+        sneaker_name, confidence = classifier.predict(image)
+        top3 = classifier.predict_topk(image, k=3)
+    except Exception as e:
+        return (
+            f'<div class="result-card" style="color: #e94560;">CV-Modell nicht verfügbar: {e}</div>',
+            *_HIDE_OVERRIDE,
+        )
+
+    # Low-confidence path: skip auto-ML/NLP, surface a top-3 picker so the user
+    # can confirm the right class and trigger price prediction manually.
+    if confidence < config.CV_CONFIDENCE_THRESHOLD:
+        choices = [(f"{name} ({int(round(p * 100))}%)", name) for name, p in top3]
+        return (
+            _render_low_confidence(sneaker_name, confidence, top3),
+            gr.update(choices=choices, value=top3[0][0], visible=True),
+            gr.update(visible=True),
+        )
+
+    # High-confidence path: full pipeline
+    return _run_ml_nlp(sneaker_name, confidence, shoe_size, retail_price), *_HIDE_OVERRIDE
+
+
+def analyse_with_override(override_label: str, shoe_size: float, retail_price: float):
+    """Run ML + NLP for a user-confirmed class (picked from the top-3 dropdown)."""
+    if not override_label:
+        return (
+            '<div class="result-card" style="color: #8a8a9a;">'
+            'Bitte zuerst eine Klasse aus der Liste waehlen.</div>',
+            gr.update(),
+            gr.update(),
+        )
+    if shoe_size is None:
+        shoe_size = 10.0
+    if retail_price is None or retail_price <= 0:
+        retail_price = 150.0
+
+    # User-confirmed → treat as high-confidence for downstream copy.
+    html = _run_ml_nlp(
+        sneaker_name=override_label,
+        confidence=1.0,
+        shoe_size=shoe_size,
+        retail_price=retail_price,
+    )
+    return html, *_HIDE_OVERRIDE
 
 
 # ---------------------------------------------------------------------------
@@ -429,11 +510,28 @@ def build_app() -> gr.Blocks:
                             value='<div class="result-card" style="color: #8a8a9a;">'
                                   'Lade ein Sneaker-Foto hoch und klicke <b>Analysieren</b>.</div>'
                         )
+                        # Hidden until a low-confidence CV result needs manual review.
+                        override_dd = gr.Dropdown(
+                            choices=[],
+                            label="Korrekte Klasse aus den Top-3 waehlen",
+                            visible=False,
+                            interactive=True,
+                        )
+                        override_btn = gr.Button(
+                            "Mit dieser Klasse Preis berechnen",
+                            variant="secondary",
+                            visible=False,
+                        )
 
                 analyse_btn.click(
                     fn=analyse,
                     inputs=[image_in, shoe_size, retail],
-                    outputs=result_html,
+                    outputs=[result_html, override_dd, override_btn],
+                )
+                override_btn.click(
+                    fn=analyse_with_override,
+                    inputs=[override_dd, shoe_size, retail],
+                    outputs=[result_html, override_dd, override_btn],
                 )
 
                 # Example buttons (only render if files exist)
@@ -470,8 +568,11 @@ def build_app() -> gr.Blocks:
 
 if __name__ == "__main__":
     app = build_app()
+    # HF Spaces injects GRADIO_SERVER_NAME=0.0.0.0; locally bind to loopback
+    # because macOS sometimes fails the 0.0.0.0 self-probe during startup.
     app.launch(
-        server_name="0.0.0.0",
-        server_port=config.APP_PORT,
+        server_name=os.environ.get("GRADIO_SERVER_NAME", "127.0.0.1"),
+        server_port=int(os.environ.get("GRADIO_SERVER_PORT", config.APP_PORT)),
         show_error=True,
+        show_api=False,
     )
