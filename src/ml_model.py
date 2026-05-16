@@ -119,7 +119,11 @@ class PricePredictor:
 
         X = self._encode_features(features)
         predicted_price = float(self.model.predict(X)[0])
+        # Realistic resell band: floor at 50% of retail (deep discount), ceiling at 3x
+        # (above this is rare hype-tier; usually a sign the encoder hit an unknown SKU).
         predicted_price = max(predicted_price, retail_price * 0.5)
+        if retail_price > 0:
+            predicted_price = min(predicted_price, retail_price * 3.0)
 
         roi = (predicted_price - retail_price) / retail_price if retail_price > 0 else 0.0
 
