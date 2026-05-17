@@ -277,18 +277,29 @@ Evidence hint: Include sample outputs and observed failure cases.
 
 ## 3. Deployment
 
-- Deployment URL: https://huggingface.co/spaces/florianshub314/sneaker-scout
-- Main user flow:
-  1. User opens the Space, lands on the **Analyse** tab.
-  2. Drag-and-drops a sneaker photo (or picks one of the provided examples).
-  3. Optionally adjusts shoe size and retail price.
-  4. Clicks **Analysieren**.
-  5. Sees three cards (Model + Confidence, Resell Price, ROI with Buy/Hold/Sell badge) and the AI recommendation paragraph below, plus the disclaimer.
-  6. Can switch to the **Marktdaten** tab to inspect distributional statistics and a price-trend chart per model, or to **Über** for the project description.
-- Screenshot or short demo: `assets/screenshots/analyse_tab.png`, `assets/screenshots/market_tab.png`. (Captured locally after deployment finalises – see `assets/screenshots/` for the latest set.)
+- **Live Space:** https://huggingface.co/spaces/muellfl/sneaker-scout
+- **Fine-tuned CV checkpoint:** https://huggingface.co/muellfl/sneaker-scout-vit (loaded by the Space at startup).
+- **Source code:** https://github.com/florianshub314/sneaker-scout
 
-Guidance hint: Deployment must be usable.
-Evidence hint: Add screenshots or short demo references.
+### Main user flow
+
+1. User opens the Space and lands on the **Analyse** tab.
+2. Drag-and-drops a sneaker photo, optionally adjusts shoe size and retail price, clicks **Analysieren**.
+3. **High-confidence path (CV ≥ 0.50):** the full result is shown automatically – Modell + Confidence, Resell Price (clipped to ≤ 3× retail), ROI with Buy/Hold/Sell badge, and the AI recommendation paragraph.
+4. **Low-confidence path (CV < 0.50):** the price step is suppressed; the user sees a warning, the top-3 alternatives, and a searchable dropdown of all 50 trained classes. The user picks the correct model (or any other class) and clicks **Mit dieser Klasse Preis berechnen** to run the price + recommendation step.
+5. The **Marktdaten** tab shows distributional statistics (avg / min / max / ROI) and a monthly median price chart per model based on the StockX 2017–2019 splits.
+6. The **Über** tab shows a one-screen project description.
+
+### Screenshots
+
+| View | File |
+| --- | --- |
+| High-confidence happy path (Yeezy 350 V2, 56% conf, $489 capped price, +200% ROI, STRONG BUY) | [`assets/screenshots/high_confidence_yeezy.png`](assets/screenshots/high_confidence_yeezy.png) |
+| Low-confidence warning + correction dropdown closed | [`assets/screenshots/low_confidence_picker_closed.png`](assets/screenshots/low_confidence_picker_closed.png) |
+| Same view with the dropdown open, typing "ad" filters the full 50-class list | [`assets/screenshots/low_confidence_picker_open.png`](assets/screenshots/low_confidence_picker_open.png) |
+| Marktdaten tab – stat cards + monthly median price chart for Nike-Zoom-Fly-Off-White | [`assets/screenshots/market_data_overview.png`](assets/screenshots/market_data_overview.png) |
+| Marktdaten tab – chart detail (clear upward price trend 2017-11 → 2019-01) | [`assets/screenshots/market_data_chart.png`](assets/screenshots/market_data_chart.png) |
+| Über tab – project description, pipeline, datasets, ethics and tech stack | [`assets/screenshots/about_tab.png`](assets/screenshots/about_tab.png) |
 
 ---
 

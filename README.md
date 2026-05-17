@@ -95,6 +95,10 @@ pytest tests/ -q
 App: https://huggingface.co/spaces/muellfl/sneaker-scout
 Fine-tuned CV model: https://huggingface.co/muellfl/sneaker-scout-vit
 
+![Analyse tab – Yeezy Boost 350 V2 happy path](assets/screenshots/high_confidence_yeezy.png)
+
+Additional screenshots (low-confidence picker, market data, about tab) are in [`assets/screenshots/`](assets/screenshots/) and are referenced in [`documentation.md`](documentation.md) Section 3.
+
 ## Documentation
 
 Full project documentation: [`documentation.md`](documentation.md)
