@@ -63,6 +63,8 @@ logs/
 # Processed data (reproducible from raw)
 data/processed/*.csv
 data/processed/*.parquet
+# Tracked exception: per-brand fairness numbers used by the ethics notebook
+!data/processed/cv_per_brand_f1.csv
 
 # HuggingFace cache
 .cache/

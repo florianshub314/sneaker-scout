@@ -1,0 +1,11 @@
+brand,n_samples,accuracy,macro_f1
+nike,100,0.3200,0.2002
+adidas,40,0.3500,0.1577
+converse,25,0.2400,0.1389
+new_balance,25,0.2000,0.1081
+vans,20,0.4500,0.2634
+adidas-yeezy,15,0.8667,0.5500
+reebok,10,0.3000,0.0952
+asics,5,0.4000,0.1429
+puma,5,0.4000,0.1905
+salomon,5,0.8000,0.4444
