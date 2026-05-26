@@ -25,9 +25,9 @@ Reference to multiple lines in `train.py`, lines 15-38:
 ## Project Metadata
 
 - Project title: **SneakerScout – AI-Powered Sneaker Recognition & Resell Advisor**
-- Student: **F. Müller** (GitHub: `florianshub314`, HuggingFace: `florianshub314`)
+- Student: **F. Müller** (GitHub: `florianshub314`, HuggingFace: `muellfl`)
 - GitHub repository URL: https://github.com/florianshub314/sneaker-scout
-- Deployment URL: https://huggingface.co/spaces/florianshub314/sneaker-scout
+- Deployment URL: https://huggingface.co/spaces/muellfl/sneaker-scout
 - Submission date: 2026-06-07
 
 ### Mandatory Setup Checks
