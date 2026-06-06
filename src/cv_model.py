@@ -34,6 +34,7 @@ class SneakerClassifier:
         )
         self.model: Optional[ViTForImageClassification] = None
         self.processor: Optional[ViTImageProcessor] = None
+        self.eval_transform = get_eval_transforms(IMAGE_SIZE)
         self.id2label: dict[int, str] = {}
         self._loaded = False
 
@@ -83,10 +84,9 @@ class SneakerClassifier:
         """
         self.load()
 
-        inputs = self.processor(images=image, return_tensors="pt")
-        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+        pixel_values = self.eval_transform(image).unsqueeze(0).to(self.device)
 
-        outputs = self.model(**inputs)
+        outputs = self.model(pixel_values=pixel_values)
         probs = torch.softmax(outputs.logits, dim=-1)[0]
         pred_idx = int(probs.argmax().item())
         confidence = float(probs[pred_idx].item())
@@ -98,10 +98,9 @@ class SneakerClassifier:
         """Return top-k predictions with probabilities."""
         self.load()
 
-        inputs = self.processor(images=image, return_tensors="pt")
-        inputs = {k2: v.to(self.device) for k2, v in inputs.items()}
+        pixel_values = self.eval_transform(image).unsqueeze(0).to(self.device)
 
-        outputs = self.model(**inputs)
+        outputs = self.model(pixel_values=pixel_values)
         probs = torch.softmax(outputs.logits, dim=-1)[0]
         top_probs, top_idx = torch.topk(probs, k=min(k, len(probs)))
 
