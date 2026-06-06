@@ -552,7 +552,7 @@ def build_app() -> gr.Blocks:
                 # Example buttons (only render if files exist)
                 example_files = [
                     ROOT / "app" / "examples" / name
-                    for name in ("jordan1.jpg", "yeezy350.jpg", "dunk_low.jpg")
+                    for name in ("cortez.jpg", "gazelle.jpg", "jordan1.jpg", "yeezy350.jpg", "dunk_low.jpg")
                 ]
                 existing = [str(p) for p in example_files if p.exists()]
                 if existing:
