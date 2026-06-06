@@ -95,9 +95,31 @@ pytest tests/ -q
 App: https://huggingface.co/spaces/muellfl/sneaker-scout
 Fine-tuned CV model: https://huggingface.co/muellfl/sneaker-scout-vit
 
+### Screenshots
+
+**Analyse tab — high-confidence happy path** (Yeezy 350 V2, 56% confidence, $489 capped price, +200% ROI, STRONG BUY)
+
 ![Analyse tab – Yeezy Boost 350 V2 happy path](assets/screenshots/high_confidence_yeezy.png)
 
-Additional screenshots (low-confidence picker, market data, about tab) are in [`assets/screenshots/`](assets/screenshots/) and are referenced in [`documentation.md`](documentation.md) Section 3.
+**Low-confidence guard — warning with correction picker (closed)**
+
+![Low-confidence warning, picker closed](assets/screenshots/low_confidence_picker_closed.png)
+
+**Correction picker open — typing filters the full 50-class list**
+
+![Low-confidence picker open](assets/screenshots/low_confidence_picker_open.png)
+
+**Marktdaten tab — stat cards + monthly median price chart**
+
+![Market data overview](assets/screenshots/market_data_overview.png)
+
+**Marktdaten tab — chart detail (upward price trend 2017-11 → 2019-01)**
+
+![Market data chart detail](assets/screenshots/market_data_chart.png)
+
+**Über tab — project description, pipeline, datasets, ethics and tech stack**
+
+![About tab](assets/screenshots/about_tab.png)
 
 ## Documentation
 
