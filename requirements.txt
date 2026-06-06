@@ -12,7 +12,8 @@ xgboost==2.0.3
 joblib==1.4.0
 
 # NLP / LLM
-openai==1.25.0
+openai==2.41.0
+httpx==0.28.1
 
 # Data
 pandas==2.2.2
